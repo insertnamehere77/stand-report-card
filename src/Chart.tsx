@@ -5,15 +5,15 @@ import { StandStats } from './StandStats';
 
 const HEIGHT = 500;
 const WIDTH = 500;
-const OUTER_RADIUS = (WIDTH / 2) * 0.8;
+const OUTER_RADIUS = (WIDTH / 2) * 0.99;
 
 
 function appendBorder(svg: d3.Selection<SVGSVGElement, unknown, null, undefined>) {
     svg.append("circle")
         .attr("r", OUTER_RADIUS)
-        .attr("fill", "white")
-        .attr("stroke-width", 5)
-        .attr("stroke", "#c09f10");
+        .attr("fill", "none")
+        .attr("stroke-width", 3)
+        .attr("stroke", "black");
 }
 
 
@@ -26,6 +26,10 @@ function mapValueToLetter(num: any): string {
         5: "A"
     };
     return lookup[num as 1 | 2 | 3 | 4 | 5] || '?';
+}
+
+function radialPointOnAxis(axisIndex: number, radius: number): number[] {
+    return d3.pointRadial((2 * Math.PI * axisIndex) / 6, radius);
 }
 
 
@@ -41,8 +45,9 @@ function appendAxisLabelsAndSummaries(svg: d3.Selection<SVGSVGElement, unknown, 
 
     const xAxisLabelRadius = OUTER_RADIUS * 0.9;
     const xAxisLabels = (g: any) => g
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 10)
+        .attr("font-family", "serif")
+        .attr("font-weight", "bold")
+        .attr("font-size", 15)
         .call((g: any) => g.selectAll("g")
             .data(categories)
             .join("g")
@@ -50,11 +55,13 @@ function appendAxisLabelsAndSummaries(svg: d3.Selection<SVGSVGElement, unknown, 
                 .attr("id", (d: string) => d)
                 .attr("fill", "none")
                 .attr("d", (d: string, i: number) => `
-              M ${d3.pointRadial((2 * Math.PI * i) / 6, xAxisLabelRadius)}
-              A${xAxisLabelRadius},${xAxisLabelRadius} 0,0,1 ${d3.pointRadial(i + 1, xAxisLabelRadius)}
+              M ${radialPointOnAxis(i - 1, xAxisLabelRadius)}
+              A${xAxisLabelRadius},${xAxisLabelRadius} 0,0,1 ${radialPointOnAxis(i + 1, xAxisLabelRadius)}
         `))
             .call((g: any) => g.append("text")
                 .append("textPath")
+                .attr("startOffset", "50%")
+                .attr("text-anchor", "middle")
                 .attr("xlink:href", (d: string) => `#${d}`)
                 .text((d: string) => d)))
 
@@ -63,18 +70,20 @@ function appendAxisLabelsAndSummaries(svg: d3.Selection<SVGSVGElement, unknown, 
 
 
     const summaryValues = svgData.map(mapValueToLetter);
-    const summaryRadius = xAxisLabelRadius * 0.8;
+    const summaryRadius = xAxisLabelRadius * 0.825;
     const xAxisSummaries = (g: any) => g
         .attr("font-family", "sans-serif")
         .attr("font-weight", "bold")
-        .attr("font-size", 25)
-        .attr("fill", "red")
+        .attr("font-size", 40)
+        .attr("fill", "black")
         .call((g: any) => g.selectAll("g")
             .data(summaryValues)
             .join("g")
             .call((g: any) => g.append("text")
-                .attr('x', (d: string, i: number) => d3.pointRadial((2 * Math.PI * i) / 6, summaryRadius)[0])
-                .attr('y', (d: string, i: number) => d3.pointRadial((2 * Math.PI * i) / 6, summaryRadius)[1])
+                .attr("text-anchor", "middle")
+                .attr("alignment-baseline", "middle")
+                .attr('x', (d: string, i: number) => radialPointOnAxis(i, summaryRadius)[0])
+                .attr('y', (d: string, i: number) => radialPointOnAxis(i, summaryRadius)[1])
                 .text((d: string) => d)));
 
     svg.append("g")
@@ -83,11 +92,11 @@ function appendAxisLabelsAndSummaries(svg: d3.Selection<SVGSVGElement, unknown, 
 
 
 function appendPolygonGraph(svg: d3.Selection<SVGSVGElement, unknown, null, undefined>, svgData: number[]) {
-    const polygonRadius = OUTER_RADIUS * 0.5;
+    const polygonRadius = OUTER_RADIUS * 0.6;
 
     svg.append("circle")
         .attr("r", polygonRadius)
-        .attr("fill", "white")
+        .attr("fill", "none")
         .attr("stroke-width", 1)
         .attr("stroke", "black");
 
@@ -100,19 +109,20 @@ function appendPolygonGraph(svg: d3.Selection<SVGSVGElement, unknown, null, unde
             .call((g: any) => g.append("line")
                 .attr('x1', 0)
                 .attr('y1', 0)
-                .attr('x2', (d: string, i: number) => d3.pointRadial((2 * Math.PI * i) / 6, polygonRadius)[0])
-                .attr('y2', (d: string, i: number) => d3.pointRadial((2 * Math.PI * i) / 6, OUTER_RADIUS * 0.5)[1])
+                .attr('x2', (d: string, i: number) => radialPointOnAxis(i, polygonRadius)[0])
+                .attr('y2', (d: string, i: number) => radialPointOnAxis(i, polygonRadius)[1])
                 .text((d: string) => d)));
 
     svg.append("g")
         .call(yAxis);
 
+    const powerLevelStep = 0.17;
     svg.append("polygon")
-        .attr("fill", "blue")
-        .attr("fill-opacity", 0.4)
+        .attr("fill", "red")
+        .attr("fill-opacity", 0.45)
         .data([svgData])
         .attr("points", (d: number[]) => d.map((val: number, i: number) => {
-            const point = d3.pointRadial((2 * Math.PI * i) / 6, (polygonRadius) * (val * 0.17));
+            const point = radialPointOnAxis(i, polygonRadius * (val * powerLevelStep));
             return point.join(',');
         }).join(" "));
 }
@@ -160,7 +170,7 @@ function Chart(props: ChartProps): JSX.Element {
 
 
     return (
-        <div id="stand-chart-container" ref={containerRef} />
+        <div className="standChart filterShadow" ref={containerRef} />
     )
 }
 
