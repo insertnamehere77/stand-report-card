@@ -1,4 +1,4 @@
-import React, { BaseSyntheticEvent, useState } from 'react';
+import React, { BaseSyntheticEvent, useRef, useState } from 'react';
 import './App.css';
 import { StandStats, generateStats } from './StandStats';
 import Chart from './Chart';
@@ -30,12 +30,20 @@ function ReportCard(props: ReportCardProps): JSX.Element {
 }
 
 
+interface UploadBoxProps {
+  setStand(newStand: Stand): void;
+  stand: Stand | undefined;
+}
 
-function App(): JSX.Element {
-  const [stand, setStand] = useState<Stand>();
+function UploadBox(props: UploadBoxProps): JSX.Element {
+  const inputRef = useRef() as React.MutableRefObject<HTMLInputElement>;
 
-  const onChange = (event: BaseSyntheticEvent) => {
-    const file = event.target.files[0];
+  const handleFile = (file: File) => {
+
+    if (props.stand) {
+      URL.revokeObjectURL(props.stand.imageUrl);
+    }
+
     const url = URL.createObjectURL(file);
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -46,24 +54,120 @@ function App(): JSX.Element {
       const newStats = generateStats(view);
 
       const newStand = {
-        name: file.name.replace(/\.[^/.]+$/, ""),
+        name: file.name.replace(/\.[^/.]+$/, "").toUpperCase(),
         imageUrl: url,
         stats: newStats
       }
-      setStand(newStand);
+      props.setStand(newStand);
     }
 
     reader.readAsArrayBuffer(file);
   }
 
+  const triggerUpload = () => {
+    if (!inputRef.current) {
+      console.error("No input ref, did it render?");
+      return;
+    }
+    inputRef.current.click();
+  }
+
+  const onUpload = (event: BaseSyntheticEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+    const file = event.target.files[0];
+    handleFile(file);
+  }
+
+  const onDrop = (event: BaseSyntheticEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+    const file = (event.nativeEvent as any).dataTransfer.files[0];
+    handleFile(file);
+  }
+
+  const doNothing = (event: BaseSyntheticEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+
+  return (
+    <div className='tarotCardBorder filterShadow'>
+      <input type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        ref={inputRef}
+        onChange={onUpload}
+      />
+      <div className="uploadZone"
+        onClick={triggerUpload}
+        onDrop={onDrop}
+        onDragOver={doNothing}
+        onDragEnter={doNothing}
+        onDragLeave={doNothing}>
+        Upload or drag an image to begin
+      </div>
+    </div>);
+}
+
+
+interface UploadPreviewProps {
+  setStand: Function;
+  stand: Stand;
+}
+
+
+function UploadPreview(props: UploadPreviewProps): JSX.Element {
+  const { imageUrl, name } = props.stand;
+
+  const onNameChange = (event: BaseSyntheticEvent) => {
+    const name = event.target.value as string;
+    props.setStand((currStand: any) => ({ ...currStand, name }));
+  };
+
+  return (<div className='tarotCardBorder filterShadow'>
+    <img className="standPreviewImage"
+      src={imageUrl}
+      alt="The file uploaded by the user depicting their stand" />
+    <input className="previewNameInput filterShadow" type="text" value={name} onChange={onNameChange} />
+  </div>)
+}
+
+
+interface UploadFormProps {
+  uploadStand(newStand: Stand): void;
+}
+
+function UploadForm(props: UploadFormProps): JSX.Element {
+  const [stand, setStand] = useState<Stand>();
+
+
+
+  return (<>
+    {
+      stand ?
+        <>
+          <UploadPreview setStand={setStand} stand={stand} />
+          <button onClick={() => props.uploadStand(stand)}>
+            Start Grading
+          </button>
+        </> :
+        <UploadBox setStand={setStand} stand={stand} />
+    }
+  </>);
+}
+
+
+function App(): JSX.Element {
+  const [stand, setStand] = useState<Stand>();
+
+
+
   return (
     <div className="App">
 
-      {!stand && <input type="file"
-        id="avatar" name="avatar"
-        accept="image/*"
-        onChange={onChange}
-      />}
+      {!stand && <UploadForm uploadStand={setStand} />}
       {stand && <ReportCard stand={stand} />}
 
     </div>

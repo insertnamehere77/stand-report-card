@@ -45,3 +45,35 @@
   text-shadow: #431a3c 0px 0px 7px;
   color: white;
 }
+
+
+.uploadZone {
+  background-color: none;
+  padding: 5rem;
+  cursor: pointer;
+  border: 3px dashed white;
+  font-weight: bold;
+}
+
+
+.tarotCardBorder {
+  background-color: #8b8b8b;
+  padding: 0.5rem;
+  width: 20rem;
+}
+
+.standPreviewImage {
+  width: 90%;
+  border: solid white 5px;
+}
+
+.previewNameInput {
+  color: #63301c;
+  text-align: center;
+  font-weight: bold;
+
+  background-color: #e7db17;
+  border: #121510 1px;
+  border-radius: 16px;
+  width: 95%;
+}
