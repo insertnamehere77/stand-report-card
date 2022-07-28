@@ -1,4 +1,4 @@
-import React, { BaseSyntheticEvent, useRef, useState } from 'react';
+import React, { BaseSyntheticEvent, useCallback, useRef, useState } from 'react';
 import './App.css';
 import { StandStats, generateStats } from './StandStats';
 import Chart from './Chart';
@@ -12,20 +12,26 @@ interface Stand {
 
 interface ReportCardProps {
   stand: Stand;
+  resetStand(): void;
 }
 function ReportCard(props: ReportCardProps): JSX.Element {
   const { imageUrl, name, stats } = props.stand;
   return (
-    <div className='reportCard'>
-      <div className='nameAndChart'>
-        <div className='nameLabel textShadow'>「STAND NAME」</div>
-        <div className='standName textShadow'>{name}</div>
-        <Chart stats={stats} />
+    <>
+      <div className='reportCard'>
+        <div className='nameAndChart'>
+          <div className='nameLabel textShadow'>「STAND NAME」</div>
+          <div className='standName textShadow'>{name}</div>
+          <Chart stats={stats} />
+        </div>
+        <img className="standImage filterShadow"
+          src={imageUrl}
+          alt="The file uploaded by the user depicting their stand" />
       </div>
-      <img className="standImage filterShadow"
-        src={imageUrl}
-        alt="The file uploaded by the user depicting their stand" />
-    </div>
+      <button onClick={props.resetStand}>
+        Start Over
+      </button>
+    </>
   );
 }
 
@@ -158,17 +164,43 @@ function UploadForm(props: UploadFormProps): JSX.Element {
   </>);
 }
 
+function LoadingIndicator() {
+  return <div className='tarotCardBorder filterShadow loadingIndicator'>
+    LOADING...
+  </div>
+}
+
+
+function generateRandomNumber(min: number, max: number): number {
+  const range = max - min;
+  return (Math.random() * range) + min;
+}
+
 
 function App(): JSX.Element {
   const [stand, setStand] = useState<Stand>();
+  const [isGrading, setIsGrading] = useState<boolean>();
 
+  const uploadStand = useCallback((newStand: Stand) => {
+    setIsGrading(true);
+    const displayStand = () => {
+      setStand(newStand);
+      setIsGrading(false);
+    }
+    setTimeout(displayStand, generateRandomNumber(1000, 3000));
+  }, []);
 
+  const resetStand = useCallback(() => {
+    setIsGrading(false);
+    setStand(undefined);
+  }, []);
 
   return (
     <div className="App">
 
-      {!stand && <UploadForm uploadStand={setStand} />}
-      {stand && <ReportCard stand={stand} />}
+      {!stand && !isGrading && <UploadForm uploadStand={uploadStand} />}
+      {isGrading && <LoadingIndicator />}
+      {stand && <ReportCard stand={stand} resetStand={resetStand} />}
 
     </div>
   );

@@ -132,9 +132,7 @@ function createStatChartElement(stats: StandStats): HTMLDivElement {
     const node = document.createElement('div');
     const svg = d3.select(node)
         .append("svg")
-        .attr("viewBox", [-WIDTH / 2, -HEIGHT / 2, WIDTH, HEIGHT])
-        .attr("width", WIDTH)
-        .attr("height", HEIGHT);
+        .attr("viewBox", [-WIDTH / 2, -HEIGHT / 2, WIDTH, HEIGHT]);
 
     const svgData = [
         stats.power,
